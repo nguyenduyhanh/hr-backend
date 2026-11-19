@@ -1,5 +1,6 @@
 package com.tlu.hrm.controller;
 
+import com.tlu.hrm.dto.request.SalaryItemDto;
 import com.tlu.hrm.dto.response.ApiResponse;
 import com.tlu.hrm.model.SalaryItem;
 import com.tlu.hrm.service.SalaryItemService;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.tlu.hrm.enums.RoleType.Constants.*;
 
@@ -24,16 +26,20 @@ public class SalaryItemController {
     @GetMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "', '"
             + HR_EMPLOYEE + "')")
-    public ResponseEntity<ApiResponse<List<SalaryItem>>> getAllSalaryItems() {
+    public ResponseEntity<ApiResponse<List<SalaryItemDto>>> getAllSalaryItems() {
         List<SalaryItem> result = salaryItemService.getAllSalaryItems();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách khoản lương thành công", result));
+        List<SalaryItemDto> dtoList = result != null
+                ? result.stream().map(SalaryItemDto::new).collect(Collectors.toList())
+                : java.util.Collections.emptyList();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách khoản lương thành công", dtoList));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<SalaryItem>> saveSalaryItem(@RequestBody SalaryItem item) {
+    public ResponseEntity<ApiResponse<SalaryItemDto>> saveSalaryItem(@RequestBody SalaryItemDto dto) {
+        SalaryItem item = dto != null ? dto.toEntity() : new SalaryItem();
         SalaryItem result = salaryItemService.saveSalaryItem(item);
-        return ResponseEntity.ok(ApiResponse.success("Lưu khoản lương thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Lưu khoản lương thành công", new SalaryItemDto(result)));
     }
 
     @DeleteMapping("/{id}")

@@ -140,16 +140,16 @@ public class PayrollServiceImpl implements PayrollService {
             List<StaffSalaryItem> staffSalaryItems = staffSalaryItemRepository.findByStaffId(staff.getId()).stream()
                     .filter(item -> item.getIsDeleted() == null || !item.getIsDeleted())
                     .collect(Collectors.toList());
-            if (staffSalaryItems == null || staffSalaryItems.isEmpty()) {
-                continue; // Chỉ tính phiếu lương cho nhân viên có cấu hình lương
-            }
 
             // Tự động khởi tạo các ngày nghỉ lễ cho nhân viên này nếu chưa có trong bảng công
             timesheetService.initHolidayTimesheets(staff.getId(), start, end);
 
             // Gọi PayslipService để tính toán chi tiết phiếu lương cho nhân viên này
             Payslip payslip = payslipService.calculateStaffPayslip(staff, payroll, start, end, standardWorkDays,
-                    staffSalaryItems);
+                    staffSalaryItems != null ? staffSalaryItems : java.util.Collections.emptyList());
+            if (staffSalaryItems == null || staffSalaryItems.isEmpty()) {
+                payslip.setNote("Chưa cấu hình khoản lương");
+            }
             payslips.add(payslip);
         }
 

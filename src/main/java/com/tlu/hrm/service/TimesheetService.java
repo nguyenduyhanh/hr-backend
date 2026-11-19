@@ -18,4 +18,5 @@ public interface TimesheetService {
     List<TimesheetDto> getByStaffAndDateRange(UUID staffId, LocalDate start, LocalDate end);
     byte[] exportTimesheetExcel(TimesheetSearchRequest request);
     void initHolidayTimesheets(UUID staffId, LocalDate start, LocalDate end);
+    void initHolidayTimesheetsForAllStaffs(LocalDate start, LocalDate end);
 }

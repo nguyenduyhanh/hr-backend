@@ -1,5 +1,7 @@
 package com.tlu.hrm.controller;
 
+import com.tlu.hrm.dto.request.DepartmentDto;
+import com.tlu.hrm.dto.request.PositionDto;
 import com.tlu.hrm.dto.request.StaffDto;
 import com.tlu.hrm.dto.response.ApiResponse;
 import com.tlu.hrm.dto.search.SearchDto;
@@ -14,6 +16,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.tlu.hrm.enums.RoleType.Constants.*;
 
@@ -33,14 +36,20 @@ public class StaffController {
     private com.tlu.hrm.repository.PositionRepository positionRepository;
 
     @GetMapping("/departments")
-    public ResponseEntity<ApiResponse<List<com.tlu.hrm.model.Department>>> getAllDepartments() {
-        List<com.tlu.hrm.model.Department> result = departmentRepository.findAll();
+    public ResponseEntity<ApiResponse<List<DepartmentDto>>> getAllDepartments() {
+        List<DepartmentDto> result = departmentRepository.findAll().stream()
+                .filter(d -> d.getIsDeleted() == null || !d.getIsDeleted())
+                .map(DepartmentDto::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Lấy toàn bộ danh sách phòng ban thành công", result));
     }
 
     @GetMapping("/positions")
-    public ResponseEntity<ApiResponse<List<com.tlu.hrm.model.Position>>> getAllPositions() {
-        List<com.tlu.hrm.model.Position> result = positionRepository.findAll();
+    public ResponseEntity<ApiResponse<List<PositionDto>>> getAllPositions() {
+        List<PositionDto> result = positionRepository.findAll().stream()
+                .filter(p -> p.getIsDeleted() == null || !p.getIsDeleted())
+                .map(PositionDto::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Lấy toàn bộ danh sách chức danh thành công", result));
     }
 

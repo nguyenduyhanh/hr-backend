@@ -26,23 +26,24 @@ public class PeriodController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<Period>> createPeriod(@RequestBody PeriodDto dto) {
+    public ResponseEntity<ApiResponse<PeriodDto>> createPeriod(@RequestBody PeriodDto dto) {
         Period result = periodService.createPeriod(dto);
-        return ResponseEntity.ok(ApiResponse.success("Tạo kỳ tính lương mới thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Tạo kỳ tính lương mới thành công", new PeriodDto(result)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<Period>> updatePeriod(@PathVariable UUID id, @RequestBody PeriodDto dto) {
+    public ResponseEntity<ApiResponse<PeriodDto>> updatePeriod(@PathVariable UUID id, @RequestBody PeriodDto dto) {
         Period result = periodService.updatePeriod(id, dto);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật kỳ tính lương thành công", result));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật kỳ tính lương thành công", new PeriodDto(result)));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "', '" + HR_EMPLOYEE + "')")
-    public ResponseEntity<ApiResponse<List<Period>>> getAllPeriods() {
+    public ResponseEntity<ApiResponse<List<PeriodDto>>> getAllPeriods() {
         List<Period> result = periodService.getAllPeriods();
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách kỳ lương thành công", result));
+        List<PeriodDto> dtoList = result != null ? result.stream().map(PeriodDto::new).collect(java.util.stream.Collectors.toList()) : java.util.Collections.emptyList();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách kỳ lương thành công", dtoList));
     }
 
     @DeleteMapping("/{id}")
@@ -54,8 +55,9 @@ public class PeriodController {
 
     @PostMapping("/paging")
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "', '" + HR_EMPLOYEE + "')")
-    public ResponseEntity<ApiResponse<Page<Period>>> getPeriods(@RequestBody PeriodSearchRequest request) {
+    public ResponseEntity<ApiResponse<Page<PeriodDto>>> getPeriods(@RequestBody PeriodSearchRequest request) {
         Page<Period> result = periodService.getPeriods(request);
-        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách kỳ lương thành công", result));
+        Page<PeriodDto> dtoPage = result != null ? result.map(PeriodDto::new) : Page.empty();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách kỳ lương thành công", dtoPage));
     }
 }
