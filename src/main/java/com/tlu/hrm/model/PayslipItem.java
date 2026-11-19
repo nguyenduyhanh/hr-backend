@@ -16,7 +16,6 @@ public class PayslipItem extends BaseModel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payslip_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
     private Payslip payslip;
 
     @ManyToOne(fetch = FetchType.EAGER)

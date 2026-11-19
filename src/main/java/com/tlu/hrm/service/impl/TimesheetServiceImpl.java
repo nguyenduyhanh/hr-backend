@@ -68,6 +68,24 @@ public class TimesheetServiceImpl implements TimesheetService {
 
     @Override
     public Page<TimesheetDto> search(TimesheetSearchRequest request) {
+        // Tự động khởi tạo ngày công nghỉ lễ cho nhân viên trong khoảng thời gian tìm kiếm nếu có ngày lễ
+        LocalDate rangeStart = request.getFromDate();
+        LocalDate rangeEnd = request.getToDate();
+        if (request.getPeriodId() != null) {
+            Optional<Period> periodOpt = periodRepository.findById(request.getPeriodId());
+            if (periodOpt.isPresent()) {
+                rangeStart = periodOpt.get().getFromDate();
+                rangeEnd = periodOpt.get().getToDate();
+            }
+        }
+        if (rangeStart != null && rangeEnd != null) {
+            if (request.getStaffId() != null) {
+                initHolidayTimesheets(request.getStaffId(), rangeStart, rangeEnd);
+            } else {
+                initHolidayTimesheetsForAllStaffs(rangeStart, rangeEnd);
+            }
+        }
+
         Specification<Timesheet> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -176,6 +194,7 @@ public class TimesheetServiceImpl implements TimesheetService {
 
     @Override
     public List<TimesheetDto> getByStaffAndDateRange(UUID staffId, LocalDate start, LocalDate end) {
+        initHolidayTimesheets(staffId, start, end);
         return timesheetRepository.findByStaffIdAndWorkingDateBetweenOrderByWorkingDateAsc(staffId, start, end)
                 .stream()
                 .map(TimesheetDto::new)
@@ -702,6 +721,12 @@ public class TimesheetServiceImpl implements TimesheetService {
         LocalDate end = request.getToDate() != null ? request.getToDate()
                 : LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
 
+        if (request != null && request.getStaffId() != null) {
+            initHolidayTimesheets(request.getStaffId(), start, end);
+        } else {
+            initHolidayTimesheetsForAllStaffs(start, end);
+        }
+
         try (Workbook workbook = new XSSFWorkbook();
                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
@@ -1111,6 +1136,42 @@ public class TimesheetServiceImpl implements TimesheetService {
                     timesheet.setWeekendOvertimeHours(0.0);
                     timesheet.setHolidayOvertimeHours(0.0);
                     timesheetRepository.save(timesheet);
+                }
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void initHolidayTimesheetsForAllStaffs(LocalDate start, LocalDate end) {
+        if (start == null || end == null || start.isAfter(end)) {
+            return;
+        }
+        List<HolidayDto> holidays = holidayService.getHolidaysInRange(start, end);
+        if (holidays == null || holidays.isEmpty()) {
+            return;
+        }
+        List<Staff> activeStaffs = staffRepository.findActiveStaffs();
+        for (HolidayDto holiday : holidays) {
+            LocalDate holidayStart = holiday.getStartDate().isBefore(start) ? start : holiday.getStartDate();
+            LocalDate holidayEnd = holiday.getEndDate().isAfter(end) ? end : holiday.getEndDate();
+
+            for (LocalDate date = holidayStart; !date.isAfter(holidayEnd); date = date.plusDays(1)) {
+                for (Staff staff : activeStaffs) {
+                    boolean exists = timesheetRepository.findByStaffIdAndWorkingDate(staff.getId(), date).isPresent();
+                    if (!exists) {
+                        Timesheet timesheet = new Timesheet();
+                        timesheet.setStaff(staff);
+                        timesheet.setWorkingDate(date);
+                        timesheet.setTotalWorkRatio(1.0);
+                        timesheet.setStandardHours(8.0);
+                        timesheet.setStatus(TimesheetStatus.APPROVED);
+                        timesheet.setNote("Nghỉ lễ hưởng nguyên lương - " + holiday.getName());
+                        timesheet.setOvertimeHours(0.0);
+                        timesheet.setWeekendOvertimeHours(0.0);
+                        timesheet.setHolidayOvertimeHours(0.0);
+                        timesheetRepository.save(timesheet);
+                    }
                 }
             }
         }

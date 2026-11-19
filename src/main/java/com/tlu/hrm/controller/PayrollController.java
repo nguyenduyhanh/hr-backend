@@ -1,6 +1,7 @@
 package com.tlu.hrm.controller;
 
 import com.tlu.hrm.dto.response.ApiResponse;
+import com.tlu.hrm.dto.response.payroll.PayrollResponse;
 import com.tlu.hrm.dto.response.payslip.PayslipResponse;
 import com.tlu.hrm.model.Payroll;
 import com.tlu.hrm.model.Payslip;
@@ -30,28 +31,35 @@ public class PayrollController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<Payroll>> createPayroll(
+    public ResponseEntity<ApiResponse<PayrollResponse>> createPayroll(
             @RequestParam UUID periodId,
             @RequestParam String name,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String description) {
-        Payroll result = payrollService.createPayroll(periodId, name, code, description);
+        Payroll entity = payrollService.createPayroll(periodId, name, code, description);
+        PayrollResponse result = PayrollResponse.fromEntity(entity);
         return ResponseEntity.ok(ApiResponse.success("Tạo bảng lương mới thành công", result));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "', '"
             + HR_EMPLOYEE + "')")
-    public ResponseEntity<ApiResponse<List<Payroll>>> getAllPayrolls() {
-        List<Payroll> result = payrollService.getAllPayrolls();
+    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getAllPayrolls() {
+        List<Payroll> entityList = payrollService.getAllPayrolls();
+        List<PayrollResponse> result = entityList.stream()
+                .map(PayrollResponse::fromEntity)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách tất cả bảng lương thành công", result));
     }
 
     @GetMapping("/by-period/{periodId}")
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "', '"
             + HR_EMPLOYEE + "')")
-    public ResponseEntity<ApiResponse<List<Payroll>>> getPayrollsByPeriod(@PathVariable UUID periodId) {
-        List<Payroll> result = payrollService.getPayrollsByPeriod(periodId);
+    public ResponseEntity<ApiResponse<List<PayrollResponse>>> getPayrollsByPeriod(@PathVariable UUID periodId) {
+        List<Payroll> entityList = payrollService.getPayrollsByPeriod(periodId);
+        List<PayrollResponse> result = entityList.stream()
+                .map(PayrollResponse::fromEntity)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách bảng lương thành công", result));
     }
 
@@ -78,15 +86,17 @@ public class PayrollController {
 
     @PutMapping("/{id}/confirm")
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<Payroll>> confirmPayroll(@PathVariable UUID id) {
-        Payroll result = payrollService.confirmPayroll(id);
+    public ResponseEntity<ApiResponse<PayrollResponse>> confirmPayroll(@PathVariable UUID id) {
+        Payroll entity = payrollService.confirmPayroll(id);
+        PayrollResponse result = PayrollResponse.fromEntity(entity);
         return ResponseEntity.ok(ApiResponse.success("Xác nhận bảng lương thành công", result));
     }
 
     @PutMapping("/{id}/unconfirm")
     @PreAuthorize("hasAnyAuthority('" + ROLE_ADMIN + "', '" + HR_MANAGER + "', '" + HR_COMPENSATION_BENEFIT + "')")
-    public ResponseEntity<ApiResponse<Payroll>> unconfirmPayroll(@PathVariable UUID id) {
-        Payroll result = payrollService.unconfirmPayroll(id);
+    public ResponseEntity<ApiResponse<PayrollResponse>> unconfirmPayroll(@PathVariable UUID id) {
+        Payroll entity = payrollService.unconfirmPayroll(id);
+        PayrollResponse result = PayrollResponse.fromEntity(entity);
         return ResponseEntity.ok(ApiResponse.success("Hủy xác nhận bảng lương thành công", result));
     }
 
